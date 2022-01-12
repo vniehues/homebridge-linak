@@ -9,7 +9,13 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Linak Desk"
+      },
+      "deskAddress": {
+        "title": "Desk MAC Address",
+        "type": "string",
+        "required": true,
+        "default": ""
       }
     }
   }
