@@ -93,7 +93,7 @@ export class DeskAccessory {
     if (!this.isMoving && !this.isPolling) {
 
       this.isPolling = true;
-      
+
       const pollcommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress;
 
       try {

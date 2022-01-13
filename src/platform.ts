@@ -31,7 +31,7 @@ export class LinakDeskPlatform implements DynamicPlatformPlugin {
       this.log.error('No desks have been configured.');
       return;
     }
-    
+
     // If we don't have any blinds configured, we're done here.
     if(!config.idasenControllerPath) {
       this.log.error('No idasen-controller-path has been configured.');
