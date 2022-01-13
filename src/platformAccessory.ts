@@ -1,9 +1,29 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-
 import { ExampleHomebridgePlatform } from './platform';
 
-const { exec } = require("child_process");
+const noble = require('@abandonware/noble');
+
+const { exec, execSync } = require("child_process");
 const controller = require('idasen-controller');
+
+
+const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a'
+const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a'
+const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a'
+
+// const COMMAND_UP = bytearray(struct.pack("<H", 71))
+// const COMMAND_DOWN = bytearray(struct.pack("<H", 70))
+// const COMMAND_STOP = bytearray(struct.pack("<H", 255))
+//
+// const COMMAND_REFERENCE_INPUT_STOP = bytearray(struct.pack("<H", 32769))
+// const COMMAND_REFERENCE_INPUT_UP = bytearray(struct.pack("<H", 32768))
+// const COMMAND_REFERENCE_INPUT_DOWN = bytearray(struct.pack("<H", 32767))
+
+// todo: this may be slope of .1
+const toInches = (position) => {
+  const mm = (381 / 3815) * position + 612.13
+  return (mm / 25.4).toFixed(1)
+}
 
 /**
  * Platform Accessory
@@ -29,6 +49,35 @@ export class ExamplePlatformAccessory {
     private readonly accessory: PlatformAccessory,
   ) {
 
+    noble.on('stateChange', async (state) => {
+      if (state === 'poweredOn') {
+        console.log("Scanning for: ", accessory.context.device.macAddress);
+        // await noble.startScanningAsync();
+        await noble.startScanningAsync([UUID_HEIGHT, UUID_COMMAND, UUID_REFERENCE_INPUT], false);
+      }
+    });
+     
+    noble.on('warning', async (message) => {
+        console.log(message);
+    });
+    
+    noble.on('discover', async (peripheral) => {
+      console.log("discovered: ", peripheral);
+      if (peripheral.address === accessory.context.device.macAddress)
+      {
+      await noble.stopScanningAsync();
+      await peripheral.connectAsync();
+      const {characteristics} = await peripheral.discoverSomeServicesAndCharacteristicsAsync(['180f'], ['2a19']);
+      const batteryLevel = (await characteristics[0].readAsync())[0];
+
+      console.log(`${peripheral.address} (${peripheral.advertisement.localName}): ${batteryLevel}%`);
+
+      await peripheral.disconnectAsync();
+      process.exit(0);
+
+      }
+    });
+    
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Default-Manufacturer')
@@ -77,14 +126,6 @@ export class ExamplePlatformAccessory {
 
     var heightPercent : number = 50;
     
-    var command = "idasen-controller --mac-address " + ;
-    
-    exec(command, (error, stdout, stderr) => {
-      var heightStr = stdout.split(":")[1].split("mm")[0];
-      var height: number = +heightStr;
-      heightPercent = height/6.5 - 95;
-    });
-    
     return heightPercent;
   }
 
@@ -112,7 +153,7 @@ export class ExamplePlatformAccessory {
     const currentValue = 1;
 
     return currentValue;
-  }
+  } 
 
   /**
    * Handle requests to set the "Target Position" characteristic
@@ -120,11 +161,11 @@ export class ExamplePlatformAccessory {
   handleTargetPositionSet(value) {
     this.platform.log.debug('Triggered SET TargetPosition:', value);
     
-    exec("idasen-controller", (error, stdout, stderr) => {
-      var heightStr = stdout.split(":")[1].split("mm")[0];
-      var height: number = +heightStr;
-      var heightPercent = height/6.5 - 95;
-      return heightPercent;
-    });
+    // exec("idasen-controller", (error, stdout, stderr) => {
+    //   var heightStr = stdout.split(":")[1].split("mm")[0];
+    //   var height: number = +heightStr;
+    //   var heightPercent = height/6.5 - 95;
+    //   return heightPercent;
+    // });
   }
 }
