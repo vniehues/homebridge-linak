@@ -4,9 +4,9 @@ import { ExampleHomebridgePlatform } from './platform';
 
 import noble from '@abandonware/noble';
 
-const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
-const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
-const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a';
+// const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
+// const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
+// const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a';
 
 // const COMMAND_UP = bytearray(struct.pack("<H", 71))
 // const COMMAND_DOWN = bytearray(struct.pack("<H", 70))
