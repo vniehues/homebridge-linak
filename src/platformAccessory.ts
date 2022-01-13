@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { Service, PlatformAccessory } from 'homebridge';
 import { ExampleHomebridgePlatform } from './platform';
-import { execSync, exec, spawn } from 'child_process';
+import { execSync } from 'child_process';
 
 // const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
 // const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
@@ -22,11 +22,11 @@ import { execSync, exec, spawn } from 'child_process';
  */
 export class ExamplePlatformAccessory {
   private service: Service;
-  private currentPos: number = 40;
+  private currentPos = 40;
   private isMoving = false;
   private isPolling = false;
 
-  private requestedPos: number = -1;
+  private requestedPos = -1;
 
   private requestedPosTimer;
 
@@ -80,6 +80,7 @@ export class ExamplePlatformAccessory {
      * can use the same sub type id.)
      */
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const interval = setInterval(() => {
       // method to be executed;
       this.poll();
@@ -93,69 +94,66 @@ export class ExamplePlatformAccessory {
 
       this.isPolling = true;
 
-      var pollcommand = "/home/pi/.local/bin/idasen-controller --mac-address " + this.accessory.context.device.macAddress;
+      const pollcommand = '/home/pi/.local/bin/idasen-controller --mac-address ' + this.accessory.context.device.macAddress;
 
       try {
-        var position = execSync(pollcommand).toString();
+        const position = execSync(pollcommand).toString();
 
-        if (position === null || position === "") {
+        if (position === null || position === '') {
           return;
         }
 
-        var heightStr = position.split("Height:")[1].split("mm")[0];
+        const heightStr = position.split('Height:')[1].split('mm')[0];
 
-        var height_rel: number = +heightStr / 6.5 - 95;
+        const height_rel: number = +heightStr / 6.5 - 95;
 
-        var currentValue = Math.round(height_rel);
+        const currentValue = Math.round(height_rel);
 
-        this.platform.log.debug("found height%: ", currentValue);
+        this.platform.log.debug('found height%: ', currentValue);
 
         //Don't update while moving. Might interrupt movement!
         if (!this.isMoving) {
           this.platform.log.debug('Updating polled values!');
 
-        this.currentPos = currentValue;
+          this.currentPos = currentValue;
 
-        this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
-        this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
-      }
-      else{
-        this.platform.log.debug('Not updating polled values because we are moving!');
-      }
+          this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
+          this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
+        } else{
+          this.platform.log.debug('Not updating polled values because we are moving!');
+        }
       } catch (error) {
-        this.platform.log.debug("polling error:", error);
-      }
-      finally {
+        this.platform.log.debug('polling error:', error);
+      } finally {
         this.isPolling = false;
       }
     }
   }
 
   moveToPercent(percentage: number) {
-    var newheight = 620 + percentage / 100 * 650
+    let newheight = 620 + percentage / 100 * 650;
     newheight = Math.round(newheight);
     if (newheight === 620) {
-      newheight = 621
+      newheight = 621;
     }
 
-    var moveCommand = "/home/pi/.local/bin/idasen-controller --mac-address " + this.accessory.context.device.macAddress + " --move-to " + newheight;
+    const moveCommand = '/home/pi/.local/bin/idasen-controller --mac-address '
+        + this.accessory.context.device.macAddress + ' --move-to ' + newheight;
 
     try {
       //needs to run sync so that we can wait for it.
       execSync(moveCommand);
     } catch (error) {
-      this.platform.log.debug("moving error:", error);
-    }
-    finally {
+      this.platform.log.debug('moving error:', error);
+    } finally {
 
 
       this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(percentage);
       this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(percentage);
-      this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(this.platform.Characteristic.PositionState.STOPPED);
+      this.service.getCharacteristic(this.platform.Characteristic.PositionState)
+        .updateValue(this.platform.Characteristic.PositionState.STOPPED);
 
       this.isMoving = false;
-
-      return;
     }
   }
 
@@ -203,22 +201,24 @@ export class ExamplePlatformAccessory {
     clearTimeout(this.requestedPosTimer);
     this.requestedPosTimer = setTimeout(() => {
 
-      this.platform.log.debug("executing move to: ", value);
+      this.platform.log.debug('executing move to: ', value);
 
       if (value === this.currentPos) {
         this.isMoving = false;
 
         this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
         this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
-        this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(this.platform.Characteristic.PositionState.STOPPED);
+        this.service.getCharacteristic(this.platform.Characteristic.PositionState)
+          .updateValue(this.platform.Characteristic.PositionState.STOPPED);
 
         return;
       }
 
 
       const moveUp = value > this.currentPos;
-      const targetPosition = value;
-      const positionState = moveUp ? this.platform.Characteristic.PositionState.INCREASING : this.platform.Characteristic.PositionState.DECREASING;
+      // const targetPosition = value;
+      const positionState = moveUp ? this.platform.Characteristic.PositionState.INCREASING
+        : this.platform.Characteristic.PositionState.DECREASING;
 
       // Tell HomeKit we're on the move.
       this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(positionState);

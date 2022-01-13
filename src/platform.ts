@@ -21,16 +21,16 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
 
-// No configuration found - we won't start.
-if(!config) {
-  return;
-}
+    // No configuration found - we won't start.
+    if(!config) {
+      return;
+    }
 
-// If we don't have any blinds configured, we're done here.
-if(!config.desks) {
-  this.log.error("No blinds have been configured.");
-  return;
-}
+    // If we don't have any blinds configured, we're done here.
+    if(!config.desks) {
+      this.log.error('No blinds have been configured.');
+      return;
+    }
 
 
 
@@ -68,18 +68,6 @@ if(!config.desks) {
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
     // or a user-defined array in the platform config.
-    const exampleDevices = [
-      {
-        exampleUniqueId: 'ABCD',
-        exampleDisplayName: 'Bedroom',
-        macAddress: 'E0:02:7B:73:8C:13',
-      },
-      {
-        exampleUniqueId: 'EFGH',
-        exampleDisplayName: 'Kitchen',
-        macAddress: 'e0:02:7b:73:8c:13',
-      },
-    ];
 
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of this.config.desks) {
