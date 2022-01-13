@@ -28,7 +28,7 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
 
     // If we don't have any blinds configured, we're done here.
     if(!config.desks) {
-      this.log.error('No blinds have been configured.');
+      this.log.error('No desks have been configured.');
       return;
     }
 

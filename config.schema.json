@@ -4,7 +4,7 @@
   "schema": {
     "type": "object",
     "properties": {
-      "inputs": {
+      "desks": {
         "type": "array",
         "items": {
           "title": "Desk",
