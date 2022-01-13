@@ -1,12 +1,11 @@
 /* eslint-disable no-console */
 import { Service, PlatformAccessory } from 'homebridge';
 import { ExampleHomebridgePlatform } from './platform';
+import { execSync, exec, spawn } from 'child_process';
 
-import noble from '@abandonware/noble';
-
-const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
-const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
-const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a';
+// const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
+// const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
+// const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a';
 
 // const COMMAND_UP = bytearray(struct.pack("<H", 71))
 // const COMMAND_DOWN = bytearray(struct.pack("<H", 70))
@@ -23,42 +22,19 @@ const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a';
  */
 export class ExamplePlatformAccessory {
   private service: Service;
+  private currentPos: number = 40;
+  private isMoving = false;
+
+  private requestedPos: number = -1;
+
+  private requestedPosTimer;
+
 
 
   constructor(
     private readonly platform: ExampleHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
   ) {
-
-    noble.on('stateChange', async (state) => {
-      if (state === 'poweredOn') {
-        console.log('Scanning for: ', accessory.context.device.macAddress);
-        // await noble.startScanningAsync();
-        await noble.startScanningAsync();
-      }
-    });
-
-    noble.on('warning', async (message) => {
-      console.log(message);
-    });
-
-    noble.on('discover', async (peripheral) => {
-      // console.log('discovered: ', peripheral.address);
-      if (peripheral.address === accessory.context.device.macAddress) {
-        console.log('connecting to: ', peripheral);
-        await noble.stopScanningAsync();
-        await peripheral.connectAsync();
-
-        console.log(peripheral.state);
-        // peripheral.discoverAllServicesAndCharacteristics((characteristics) => {
-        //   console.log(characteristics);
-        // });
-
-        // await peripheral.disconnectAsync();
-        process.exit(0);
-
-      }
-    });
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -69,11 +45,14 @@ export class ExamplePlatformAccessory {
     // get the LightBulb service if it exists, otherwise create a new LightBulb service
     // you can create multiple services for each accessory
     this.service = this.accessory.getService(this.platform.Service.WindowCovering)
-        || this.accessory.addService(this.platform.Service.WindowCovering);
+      || this.accessory.addService(this.platform.Service.WindowCovering);
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.exampleDisplayName);
+    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.name);
+
+    // Initialize our state as stopped.
+    this.service.setCharacteristic(this.platform.Characteristic.PositionState, this.platform.Characteristic.PositionState.STOPPED);
 
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Lightbulb
@@ -99,17 +78,76 @@ export class ExamplePlatformAccessory {
      * The USER_DEFINED_SUBTYPE must be unique to the platform accessory (if you platform exposes multiple accessories, each accessory
      * can use the same sub type id.)
      */
+
+    const interval = setInterval(() => {
+      // method to be executed;
+      this.poll();
+    }, 20000);
+
+    //  clearInterval(interval);
   }
 
+  poll() {
+    if (!this.isMoving) {
+
+      var pollcommand = "/home/pi/.local/bin/idasen-controller --mac-address " + this.accessory.context.device.macAddress;
+
+      try {
+        var position = execSync(pollcommand).toString();
+
+        if (position === null || position === "") {
+          return;
+        }
+
+        var heightStr = position.split("Height:")[1].split("mm")[0];
+
+        var height_rel: number = +heightStr / 6.5 - 95;
+
+        var currentValue = Math.round(height_rel);
+
+        console.log(currentValue);
+
+        this.currentPos = currentValue;
+
+        this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
+        this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }
+
+  moveToPercent(percentage: number) {
+    var newheight = 620 + percentage / 100 * 650
+    newheight = Math.round(newheight);
+    if (newheight === 620) {
+      newheight = 621
+    }
+
+    var moveCommand = "/home/pi/.local/bin/idasen-controller --mac-address " + this.accessory.context.device.macAddress + " --move-to " + newheight;
+
+    try {
+      execSync(moveCommand);
+    } catch (error) {
+      console.log(error);
+    }
+
+    this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(percentage);
+    this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(percentage);
+    this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(this.platform.Characteristic.PositionState.STOPPED);
+
+    this.isMoving = false;
+
+    return;
+  }
+
+
   /**
-   * Handle requests to get the current value of the "Current Position" characteristic
-   */
+     * Handle requests to get the current value of the "Current Position" characteristic
+     */
   handleCurrentPositionGet() {
     this.platform.log.debug('Triggered GET CurrentPosition');
-
-    const heightPercent = 50;
-
-    return heightPercent;
+    return this.currentPos;
   }
 
 
@@ -120,7 +158,7 @@ export class ExamplePlatformAccessory {
     this.platform.log.debug('Triggered GET PositionState');
 
     // set this to a valid value for PositionState
-    const currentValue = this.platform.Characteristic.PositionState.DECREASING;
+    const currentValue = this.platform.Characteristic.PositionState.STOPPED;
 
     return currentValue;
   }
@@ -131,12 +169,9 @@ export class ExamplePlatformAccessory {
    */
   handleTargetPositionGet() {
     this.platform.log.debug('Triggered GET TargetPosition');
-
-    // set this to a valid value for TargetPosition
-    const currentValue = 1;
-
-    return currentValue;
+    return this.currentPos;
   }
+
 
   /**
    * Handle requests to set the "Target Position" characteristic
@@ -144,11 +179,34 @@ export class ExamplePlatformAccessory {
   handleTargetPositionSet(value) {
     this.platform.log.debug('Triggered SET TargetPosition:', value);
 
-    // exec("idasen-controller", (error, stdout, stderr) => {
-    //   var heightStr = stdout.split(":")[1].split("mm")[0];
-    //   var height: number = +heightStr;
-    //   var heightPercent = height/6.5 - 95;
-    //   return heightPercent;
-    // });
+    // We're moving. We don't want any status refreshes until we complete the move.
+    this.isMoving = true;
+
+    clearTimeout(this.requestedPosTimer);
+    this.requestedPosTimer = setTimeout(() => {
+
+      console.log("executing move to: ", value);
+
+      if (value === this.currentPos) {
+        this.isMoving = false;
+
+        this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
+        this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
+        this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(this.platform.Characteristic.PositionState.STOPPED);
+
+        return;
+      }
+
+
+      const moveUp = value > this.currentPos;
+      const targetPosition = value;
+      const positionState = moveUp ? this.platform.Characteristic.PositionState.INCREASING : this.platform.Characteristic.PositionState.DECREASING;
+
+      // Tell HomeKit we're on the move.
+      this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(positionState);
+
+      setTimeout(() => this.moveToPercent(value), 100);
+
+    }, 2500);
   }
 }
