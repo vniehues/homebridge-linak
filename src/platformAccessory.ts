@@ -93,8 +93,8 @@ export class DeskAccessory {
     if (!this.isMoving && !this.isPolling) {
 
       this.isPolling = true;
-
-      const pollcommand = this.accessory.context.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress;
+      
+      const pollcommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress;
 
       try {
         const position = execSync(pollcommand).toString();
@@ -137,7 +137,7 @@ export class DeskAccessory {
       newheight = 621;
     }
 
-    const moveCommand = this.accessory.context.idasenControllerPath + ' --mac-address '
+    const moveCommand = this.platform.config.idasenControllerPath + ' --mac-address '
         + this.accessory.context.device.macAddress + ' --move-to ' + newheight;
 
     try {

@@ -31,6 +31,12 @@ export class LinakDeskPlatform implements DynamicPlatformPlugin {
       this.log.error('No desks have been configured.');
       return;
     }
+    
+    // If we don't have any blinds configured, we're done here.
+    if(!config.idasenControllerPath) {
+      this.log.error('No idasen-controller-path has been configured.');
+      return;
+    }
 
 
 
@@ -107,7 +113,6 @@ export class LinakDeskPlatform implements DynamicPlatformPlugin {
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
         accessory.context.device = device;
-        accessory.context.idasenControllerPath = this.config.idasenControllerPath;
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
