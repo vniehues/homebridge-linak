@@ -1,21 +1,29 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "Homebridge-Linak-Controller",
   "pluginType": "platform",
-  "singular": true,
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "required": true,
-        "default": "Linak Desk"
-      },
-      "deskAddress": {
-        "title": "Desk MAC Address",
-        "type": "string",
-        "required": true,
-        "default": ""
+      "inputs": {
+        "type": "array",
+        "items": {
+          "title": "Desk",
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "required": true,
+              "default": "Linak Desk"
+            },
+            "deskAddress": {
+              "title": "Desk MAC Address",
+              "type": "string",
+              "required": true,
+              "default": ""
+            }
+          }
+        }
       }
     }
   }
