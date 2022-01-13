@@ -1,15 +1,12 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+/* eslint-disable no-console */
+import { Service, PlatformAccessory } from 'homebridge';
 import { ExampleHomebridgePlatform } from './platform';
 
-const noble = require('@abandonware/noble');
+import noble from '@abandonware/noble';
 
-const { exec, execSync } = require("child_process");
-const controller = require('idasen-controller');
-
-
-const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a'
-const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a'
-const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a'
+const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
+const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
+const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a';
 
 // const COMMAND_UP = bytearray(struct.pack("<H", 71))
 // const COMMAND_DOWN = bytearray(struct.pack("<H", 70))
@@ -18,12 +15,6 @@ const UUID_REFERENCE_INPUT = '99fa0031-338a-1024-8a49-009c0215f78a'
 // const COMMAND_REFERENCE_INPUT_STOP = bytearray(struct.pack("<H", 32769))
 // const COMMAND_REFERENCE_INPUT_UP = bytearray(struct.pack("<H", 32768))
 // const COMMAND_REFERENCE_INPUT_DOWN = bytearray(struct.pack("<H", 32767))
-
-// todo: this may be slope of .1
-const toInches = (position) => {
-  const mm = (381 / 3815) * position + 612.13
-  return (mm / 25.4).toFixed(1)
-}
 
 /**
  * Platform Accessory
@@ -34,16 +25,6 @@ export class ExamplePlatformAccessory {
   private service: Service;
 
 
-
-  /**
-   * These are just used to create a working example
-   * You should implement your own code to track the state of your accessory
-   */
-  private exampleStates = {
-    On: false,
-    Brightness: 100,
-  };
-
   constructor(
     private readonly platform: ExampleHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
@@ -51,33 +32,32 @@ export class ExamplePlatformAccessory {
 
     noble.on('stateChange', async (state) => {
       if (state === 'poweredOn') {
-        console.log("Scanning for: ", accessory.context.device.macAddress);
+        console.log('Scanning for: ', accessory.context.device.macAddress);
         // await noble.startScanningAsync();
         await noble.startScanningAsync([UUID_HEIGHT, UUID_COMMAND, UUID_REFERENCE_INPUT], false);
       }
     });
-     
+
     noble.on('warning', async (message) => {
-        console.log(message);
+      console.log(message);
     });
-    
+
     noble.on('discover', async (peripheral) => {
-      console.log("discovered: ", peripheral);
-      if (peripheral.address === accessory.context.device.macAddress)
-      {
-      await noble.stopScanningAsync();
-      await peripheral.connectAsync();
-      const {characteristics} = await peripheral.discoverSomeServicesAndCharacteristicsAsync(['180f'], ['2a19']);
-      const batteryLevel = (await characteristics[0].readAsync())[0];
+      console.log('discovered: ', peripheral);
+      if (peripheral.address === accessory.context.device.macAddress) {
+        await noble.stopScanningAsync();
+        await peripheral.connectAsync();
+        const {characteristics} = await peripheral.discoverSomeServicesAndCharacteristicsAsync(['180f'], ['2a19']);
+        const batteryLevel = (await characteristics[0].readAsync())[0];
 
-      console.log(`${peripheral.address} (${peripheral.advertisement.localName}): ${batteryLevel}%`);
+        console.log(`${peripheral.address} (${peripheral.advertisement.localName}): ${batteryLevel}%`);
 
-      await peripheral.disconnectAsync();
-      process.exit(0);
+        await peripheral.disconnectAsync();
+        process.exit(0);
 
       }
     });
-    
+
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Default-Manufacturer')
@@ -86,7 +66,8 @@ export class ExamplePlatformAccessory {
 
     // get the LightBulb service if it exists, otherwise create a new LightBulb service
     // you can create multiple services for each accessory
-    this.service = this.accessory.getService(this.platform.Service.WindowCovering) || this.accessory.addService(this.platform.Service.WindowCovering);
+    this.service = this.accessory.getService(this.platform.Service.WindowCovering)
+        || this.accessory.addService(this.platform.Service.WindowCovering);
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
@@ -94,17 +75,17 @@ export class ExamplePlatformAccessory {
 
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Lightbulb
-// create handlers for required characteristics
-    
+    // create handlers for required characteristics
+
     this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition)
-        .onGet(this.handleCurrentPositionGet.bind(this));
+      .onGet(this.handleCurrentPositionGet.bind(this));
 
     this.service.getCharacteristic(this.platform.Characteristic.PositionState)
-        .onGet(this.handlePositionStateGet.bind(this));
+      .onGet(this.handlePositionStateGet.bind(this));
 
     this.service.getCharacteristic(this.platform.Characteristic.TargetPosition)
-        .onGet(this.handleTargetPositionGet.bind(this))
-        .onSet(this.handleTargetPositionSet.bind(this));
+      .onGet(this.handleTargetPositionGet.bind(this))
+      .onSet(this.handleTargetPositionSet.bind(this));
 
     /**
      * Creating multiple services of the same type.
@@ -124,8 +105,8 @@ export class ExamplePlatformAccessory {
   handleCurrentPositionGet() {
     this.platform.log.debug('Triggered GET CurrentPosition');
 
-    var heightPercent : number = 50;
-    
+    const heightPercent = 50;
+
     return heightPercent;
   }
 
@@ -153,14 +134,14 @@ export class ExamplePlatformAccessory {
     const currentValue = 1;
 
     return currentValue;
-  } 
+  }
 
   /**
    * Handle requests to set the "Target Position" characteristic
    */
   handleTargetPositionSet(value) {
     this.platform.log.debug('Triggered SET TargetPosition:', value);
-    
+
     // exec("idasen-controller", (error, stdout, stderr) => {
     //   var heightStr = stdout.split(":")[1].split("mm")[0];
     //   var height: number = +heightStr;

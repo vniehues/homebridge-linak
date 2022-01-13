@@ -6,4 +6,4 @@ export const PLATFORM_NAME = 'Homebridge-Linak-Controller';
 /**
  * This must match the name of your plugin as defined the package.json
  */
-export const PLUGIN_NAME = 'homebridge-linak'; 
+export const PLUGIN_NAME = 'homebridge-linak';

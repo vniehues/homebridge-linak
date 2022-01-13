@@ -58,12 +58,12 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
       {
         exampleUniqueId: 'ABCD',
         exampleDisplayName: 'Bedroom',
-        macAddress: 'E0:02:7B:73:8C:13'
+        macAddress: 'E0:02:7B:73:8C:13',
       },
       {
         exampleUniqueId: 'EFGH',
         exampleDisplayName: 'Kitchen',
-        macAddress: ''
+        macAddress: '',
       },
     ];
 
