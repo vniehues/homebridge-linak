@@ -16,7 +16,7 @@
               "required": true,
               "default": "Linak Desk"
             },
-            "deskAddress": {
+            "macAddress": {
               "title": "Desk MAC Address",
               "type": "string",
               "required": true,
