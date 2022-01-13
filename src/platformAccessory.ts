@@ -24,6 +24,7 @@ export class ExamplePlatformAccessory {
   private service: Service;
   private currentPos: number = 40;
   private isMoving = false;
+  private isPolling = false;
 
   private requestedPos: number = -1;
 
@@ -88,7 +89,9 @@ export class ExamplePlatformAccessory {
   }
 
   poll() {
-    if (!this.isMoving) {
+    if (!this.isMoving && !this.isPolling) {
+
+      this.isPolling = true;
 
       var pollcommand = "/home/pi/.local/bin/idasen-controller --mac-address " + this.accessory.context.device.macAddress;
 
@@ -105,14 +108,25 @@ export class ExamplePlatformAccessory {
 
         var currentValue = Math.round(height_rel);
 
-        console.log(currentValue);
+        this.platform.log.debug("found height%: ", currentValue);
+
+        //Don't update while moving. Might interrupt movement!
+        if (!this.isMoving) {
+          this.platform.log.debug('Updating polled values!');
 
         this.currentPos = currentValue;
 
         this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
         this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
+      }
+      else{
+        this.platform.log.debug('Not updating polled values because we are moving!');
+      }
       } catch (error) {
-        console.log(error);
+        this.platform.log.debug("polling error:", error);
+      }
+      finally {
+        this.isPolling = false;
       }
     }
   }
@@ -127,18 +141,22 @@ export class ExamplePlatformAccessory {
     var moveCommand = "/home/pi/.local/bin/idasen-controller --mac-address " + this.accessory.context.device.macAddress + " --move-to " + newheight;
 
     try {
+      //needs to run sync so that we can wait for it.
       execSync(moveCommand);
     } catch (error) {
-      console.log(error);
+      this.platform.log.debug("moving error:", error);
     }
+    finally {
 
-    this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(percentage);
-    this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(percentage);
-    this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(this.platform.Characteristic.PositionState.STOPPED);
 
-    this.isMoving = false;
+      this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(percentage);
+      this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(percentage);
+      this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(this.platform.Characteristic.PositionState.STOPPED);
 
-    return;
+      this.isMoving = false;
+
+      return;
+    }
   }
 
 
@@ -185,7 +203,7 @@ export class ExamplePlatformAccessory {
     clearTimeout(this.requestedPosTimer);
     this.requestedPosTimer = setTimeout(() => {
 
-      console.log("executing move to: ", value);
+      this.platform.log.debug("executing move to: ", value);
 
       if (value === this.currentPos) {
         this.isMoving = false;
