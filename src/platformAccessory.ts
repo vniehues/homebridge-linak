@@ -34,7 +34,7 @@ export class ExamplePlatformAccessory {
       if (state === 'poweredOn') {
         console.log('Scanning for: ', accessory.context.device.macAddress);
         // await noble.startScanningAsync();
-        await noble.startScanningAsync([UUID_HEIGHT, UUID_COMMAND, UUID_REFERENCE_INPUT], false);
+        await noble.startScanningAsync();
       }
     });
 
