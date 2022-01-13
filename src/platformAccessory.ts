@@ -45,6 +45,7 @@ export class ExamplePlatformAccessory {
     noble.on('discover', async (peripheral) => {
       console.log('discovered: ', peripheral.address);
       if (peripheral.address === accessory.context.device.macAddress) {
+        console.log('connecting to: ', peripheral);
         await noble.stopScanningAsync();
         await peripheral.connectAsync();
         const {characteristics} = await peripheral.discoverSomeServicesAndCharacteristicsAsync(['180f'], ['2a19']);
