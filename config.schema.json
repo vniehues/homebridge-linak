@@ -4,6 +4,18 @@
   "schema": {
     "type": "object",
     "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "required": true,
+        "default": "Linak Platform"
+      },
+      "idasenControllerPath": {
+        "title": "Path to Idasen-Controller",
+        "type": "string",
+        "required": true,
+        "default": "/home/pi/.local/bin/idasen-controller"
+      },
       "desks": {
         "type": "array",
         "items": {

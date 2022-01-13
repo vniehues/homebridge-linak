@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { Service, PlatformAccessory } from 'homebridge';
-import { ExampleHomebridgePlatform } from './platform';
+import { LinakDeskPlatform } from './platform';
 import { execSync } from 'child_process';
 
 // const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
@@ -20,7 +20,7 @@ import { execSync } from 'child_process';
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class ExamplePlatformAccessory {
+export class DeskAccessory {
   private service: Service;
   private currentPos = 40;
   private isMoving = false;
@@ -33,7 +33,7 @@ export class ExamplePlatformAccessory {
 
 
   constructor(
-    private readonly platform: ExampleHomebridgePlatform,
+    private readonly platform: LinakDeskPlatform,
     private readonly accessory: PlatformAccessory,
   ) {
 
@@ -94,7 +94,7 @@ export class ExamplePlatformAccessory {
 
       this.isPolling = true;
 
-      const pollcommand = '/home/pi/.local/bin/idasen-controller --mac-address ' + this.accessory.context.device.macAddress;
+      const pollcommand = this.accessory.context.device.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress;
 
       try {
         const position = execSync(pollcommand).toString();
@@ -137,7 +137,7 @@ export class ExamplePlatformAccessory {
       newheight = 621;
     }
 
-    const moveCommand = '/home/pi/.local/bin/idasen-controller --mac-address '
+    const moveCommand = this.accessory.context.device.idasenControllerPath + ' --mac-address '
         + this.accessory.context.device.macAddress + ' --move-to ' + newheight;
 
     try {
