@@ -34,6 +34,11 @@ export class DeskAccessory {
 
 
 
+  private maxRetries = 3;
+  private currentMoveRetry = 0;
+
+
+
   constructor(
     private readonly platform: LinakDeskPlatform,
     private readonly accessory: PlatformAccessory,
@@ -86,7 +91,6 @@ export class DeskAccessory {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const interval = setInterval(() => {
-      // method to be executed;
       this.poll();
     }, pollinginterval * 1000);
 
@@ -155,7 +159,13 @@ export class DeskAccessory {
     }
   }
 
+
   async moveToPercent(percentage: number) {
+
+    if (this.currentMoveRetry > this.maxRetries) {
+      return;
+    }
+
     let newheight = 620 + percentage / 100 * 650;
     newheight = Math.round(newheight);
     if (newheight === 620) {
@@ -177,6 +187,8 @@ export class DeskAccessory {
       if (error) {
         if (error.signal !== 'SIGINT') {
           this.platform.log.debug('moving error:', error);
+          this.currentMoveRetry = this.currentMoveRetry + 1;
+          this.moveToPercent(percentage);
         } else {
           // We killed it, lets return.
           return;
@@ -214,6 +226,7 @@ export class DeskAccessory {
           this.platform.log.debug('moving error:', error);
         } finally {
           this.platform.log.debug('resetting move state');
+          this.currentMoveRetry = 0;
           this.isMoving = false;
           this.service.getCharacteristic(this.platform.Characteristic.PositionState)
             .updateValue(this.platform.Characteristic.PositionState.STOPPED);
