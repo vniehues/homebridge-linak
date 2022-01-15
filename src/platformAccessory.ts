@@ -304,6 +304,7 @@ export class DeskAccessory {
      */
   handleCurrentPositionGet() {
     this.platform.log.debug('Triggered GET CurrentPosition');
+    setTimeout(() => this.poll(), 100);
     return this.currentPos;
   }
 }
