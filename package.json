@@ -2,7 +2,7 @@
   "private": false,
   "displayName": "Linak Bluetooth Desk Control",
   "name": "homebridge-linak",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "This plugin allows you to expose your Linak Desk Motor as Blinds in Homekit",
   "license": "Apache-2.0",
   "repository": {
