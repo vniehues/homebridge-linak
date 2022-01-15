@@ -10,6 +10,13 @@
         "required": true,
         "default": "Linak Platform"
       },
+      "pollingRate": {
+        "title": "Polling timeout",
+        "type": "number",
+        "required": true,
+        "default": 20,
+        "minimum": 10
+      },
       "idasenControllerPath": {
         "title": "Path to Idasen-Controller",
         "type": "string",
@@ -18,6 +25,7 @@
       },
       "desks": {
         "type": "array",
+        "maxItems": 5,
         "items": {
           "title": "Desk",
           "type": "object",

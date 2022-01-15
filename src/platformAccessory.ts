@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { Service, PlatformAccessory } from 'homebridge';
 import { LinakDeskPlatform } from './platform';
-import { execSync } from 'child_process';
+import { exec, execSync, spawn } from 'child_process';
 
 // const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
 // const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
@@ -15,6 +15,10 @@ import { execSync } from 'child_process';
 // const COMMAND_REFERENCE_INPUT_UP = bytearray(struct.pack("<H", 32768))
 // const COMMAND_REFERENCE_INPUT_DOWN = bytearray(struct.pack("<H", 32767))
 
+function waitFor(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
@@ -25,8 +29,10 @@ export class DeskAccessory {
   private currentPos = 40;
   private isMoving = false;
   private isPolling = false;
+  private currentlyRequestingMove = false;
 
-  private requestedPos = -1;
+  private currentPollProcess;
+  private currentMoveProcess;
 
   private requestedPosTimer;
 
@@ -80,61 +86,81 @@ export class DeskAccessory {
      * can use the same sub type id.)
      */
 
+    let pollinginterval = this.platform.config.pollingRate > 10 ? this.platform.config.pollingRate : 10;
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const interval = setInterval(() => {
       // method to be executed;
       this.poll();
-    }, this.platform.config.pollingRate | 25000);
+    }, pollinginterval);
 
     //  clearInterval(interval);
   }
 
   poll() {
-    if (!this.isMoving && !this.isPolling) {
+    if (!this.isMoving && !this.isPolling && !this.currentlyRequestingMove) {
 
       this.isPolling = true;
 
       const pollcommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress;
 
-      try {
-        const output = execSync(pollcommand)
-
-        this.platform.log.debug("Polling output: ",output);
-
-        const position = output.toString();
-
-        if (position === null || position === '') {
-          return;
+      this.currentPollProcess = exec(pollcommand, (error, stdout, stderr) => {
+        if (stderr) {
+          this.platform.log.debug('polling std error:', stderr.toString());
         }
-
-        const heightStr = position.split('Height:')[1].split('mm')[0];
-
-        const height_rel: number = +heightStr / 6.5 - 95;
-
-        const currentValue = Math.round(height_rel);
-
-        this.platform.log.debug('found height%: ', currentValue);
-
-        //Don't update while moving. Might interrupt movement!
-        if (!this.isMoving) {
-          this.platform.log.debug('Updating polled values!');
-
-          this.currentPos = currentValue;
-
-          this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
-          this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
-        } else{
-          this.platform.log.debug('Not updating polled values because we are moving!');
+        if (error) {
+          if (error.signal != 'SIGINT') {
+            this.platform.log.debug('polling error:', error);
+          }
+          else {
+            // We killed it, lets return.
+            return;
+          }
         }
-      } catch (error) {
-        this.platform.log.debug('polling error:', error);
-      } finally {
-        this.isPolling = false;
-      }
+        if (stdout) {
+          try {
+            const outputString = stdout.toString();
+
+            if (outputString === null || outputString === '' || !outputString.includes('Height:')) {
+              this.platform.log.debug('polling complete without usable information:', outputString);
+              return;
+            }
+
+            const splitFirst = outputString.split('Height:')[1];
+
+            const splitSecond = splitFirst.split('mm')[0];
+
+            const heightStr = splitSecond;
+
+            const height_rel: number = +heightStr / 6.5 - 95;
+
+            const currentValue = Math.round(height_rel);
+
+            this.platform.log.debug('found height%: ', currentValue);
+
+            //Don't update while moving. Might interrupt movement!
+            if (!this.isMoving && !this.currentlyRequestingMove) {
+              this.platform.log.debug('Updating polled values!');
+
+              this.currentPos = currentValue;
+
+              this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
+              this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
+            } else {
+              this.platform.log.debug('Not updating polled values because we are moving!');
+            }
+            return;
+          } catch (error) {
+            this.platform.log.debug('polling error:', error);
+          } finally {
+            this.isPolling = false;
+          }
+        }
+      });
     }
   }
 
-  moveToPercent(percentage: number) {
+  async moveToPercent(percentage: number) {
     let newheight = 620 + percentage / 100 * 650;
     newheight = Math.round(newheight);
     if (newheight === 620) {
@@ -142,34 +168,118 @@ export class DeskAccessory {
     }
 
     const moveCommand = this.platform.config.idasenControllerPath + ' --mac-address '
-        + this.accessory.context.device.macAddress + ' --move-to ' + newheight;
+      + this.accessory.context.device.macAddress + ' --move-to ' + newheight;
 
-    try {
-      //needs to run sync so that we can wait for it.
-      execSync(moveCommand);
-    } catch (error) {
-      this.platform.log.debug('moving error:', error);
-    } finally {
+    this.isMoving = true;
 
+    this.currentPollProcess?.kill('SIGINT');
+    this.currentPollProcess = null;
 
-      this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(percentage);
-      this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(percentage);
-      this.service.getCharacteristic(this.platform.Characteristic.PositionState)
-        .updateValue(this.platform.Characteristic.PositionState.STOPPED);
+    this.currentMoveProcess = exec(moveCommand, (error, stdout, stderr) => {
+      if (stderr) {
+        this.platform.log.debug('moving std error:', stderr.toString());
+      }
+      if (error) {
+        if (error.signal != 'SIGINT') {
+          this.platform.log.debug('moving error:', error);
+        }
+        else {
+          // We killed it, lets return.
+          return;
+        }
+      }
+      if (stdout) {
+        try {
+          const outputString = stdout.toString();
 
-      this.isMoving = false;
-    }
+          if (outputString === null || outputString === '' || !outputString.includes('Final height:')) {
+            this.platform.log.debug('moving complete without usable information:', outputString);
+            return;
+          }
+
+          const splitFirst = outputString.split('Final height:')[1];
+
+          const splitSecond = splitFirst.split('mm')[0];
+
+          const heightStr = splitSecond;
+
+          const height_rel: number = +heightStr / 6.5 - 95;
+
+          const currentValue = Math.round(height_rel);
+
+          this.platform.log.debug('new height%: ', currentValue);
+
+          this.platform.log.debug('setting new values!');
+
+          this.currentPos = currentValue;
+
+          this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
+          this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
+
+        } catch (error) {
+          this.platform.log.debug('moving error:', error);
+        } finally {
+          this.platform.log.debug('resetting move state');
+          this.isMoving = false;
+          this.service.getCharacteristic(this.platform.Characteristic.PositionState)
+            .updateValue(this.platform.Characteristic.PositionState.STOPPED);
+        }
+      }
+    })
+
   }
 
+
+  // HomeKit setter & getters
+  // TargetPosition get & set
+  // CurrentPosition get
+  // PositionState get
 
   /**
-     * Handle requests to get the current value of the "Current Position" characteristic
-     */
-  handleCurrentPositionGet() {
-    this.platform.log.debug('Triggered GET CurrentPosition');
-    return this.currentPos;
+   * Handle requests to set the "Target Position" characteristic
+   */
+  handleTargetPositionSet(value) {
+    this.platform.log.debug('Triggered SET TargetPosition:', value);
+
+    // We don't want any status refreshes until we complete the move.
+    this.currentlyRequestingMove = true;
+
+    /////// NOPE! BAD IDEA! 
+    /////// This would make the desk run infinitely (to it's end-stops.)
+    /////// because the script is needed to stop movement.
+    // Kill current move. safety & responsiveness.
+    // if (this.isMoving) {
+    //   this.currentMoveProcess?.kill('SIGINT');
+    //   this.currentMoveProcess?.kill();
+    //   this.currentMoveProcess = null;
+    // }
+
+    clearTimeout(this.requestedPosTimer);
+      this.requestedPosTimer = setTimeout(() => {
+
+      this.platform.log.debug('executing move to: ', value);
+
+      const moveUp = value > this.currentPos;
+
+      const positionState = moveUp ? this.platform.Characteristic.PositionState.INCREASING
+        : this.platform.Characteristic.PositionState.DECREASING;
+
+      // Tell HomeKit we're on the move.
+      this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(positionState);
+
+      setTimeout(() => this.moveToPercent(value), 100);
+      
+      this.currentlyRequestingMove = false;
+    }, 1500);
   }
 
+  /**
+   * Handle requests to get the current value of the "Target Position" characteristic
+   */
+  handleTargetPositionGet() {
+    this.platform.log.debug('Triggered GET TargetPosition');
+    return this.currentPos;
+  }
 
   /**
    * Handle requests to get the current value of the "Position State" characteristic
@@ -183,52 +293,11 @@ export class DeskAccessory {
     return currentValue;
   }
 
-
   /**
-   * Handle requests to get the current value of the "Target Position" characteristic
-   */
-  handleTargetPositionGet() {
-    this.platform.log.debug('Triggered GET TargetPosition');
+     * Handle requests to get the current value of the "Current Position" characteristic
+     */
+  handleCurrentPositionGet() {
+    this.platform.log.debug('Triggered GET CurrentPosition');
     return this.currentPos;
-  }
-
-
-  /**
-   * Handle requests to set the "Target Position" characteristic
-   */
-  handleTargetPositionSet(value) {
-    this.platform.log.debug('Triggered SET TargetPosition:', value);
-
-    // We're moving. We don't want any status refreshes until we complete the move.
-    this.isMoving = true;
-
-    clearTimeout(this.requestedPosTimer);
-    this.requestedPosTimer = setTimeout(() => {
-
-      this.platform.log.debug('executing move to: ', value);
-
-      if (value === this.currentPos) {
-        this.isMoving = false;
-
-        this.service.getCharacteristic(this.platform.Characteristic.TargetPosition).updateValue(this.currentPos);
-        this.service.getCharacteristic(this.platform.Characteristic.CurrentPosition).updateValue(this.currentPos);
-        this.service.getCharacteristic(this.platform.Characteristic.PositionState)
-          .updateValue(this.platform.Characteristic.PositionState.STOPPED);
-
-        return;
-      }
-
-
-      const moveUp = value > this.currentPos;
-      // const targetPosition = value;
-      const positionState = moveUp ? this.platform.Characteristic.PositionState.INCREASING
-        : this.platform.Characteristic.PositionState.DECREASING;
-
-      // Tell HomeKit we're on the move.
-      this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(positionState);
-
-      setTimeout(() => this.moveToPercent(value), 100);
-
-    }, 2500);
   }
 }
