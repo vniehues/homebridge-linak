@@ -88,7 +88,7 @@ export class DeskAccessory {
     const interval = setInterval(() => {
       // method to be executed;
       this.poll();
-    }, pollinginterval);
+    }, pollinginterval * 1000);
 
     //  clearInterval(interval);
   }
