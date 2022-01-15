@@ -84,7 +84,7 @@ export class DeskAccessory {
     const interval = setInterval(() => {
       // method to be executed;
       this.poll();
-    }, 20000);
+    }, this.platform.config.pollingRate | 25000);
 
     //  clearInterval(interval);
   }
