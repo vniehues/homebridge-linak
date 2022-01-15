@@ -97,7 +97,11 @@ export class DeskAccessory {
       const pollcommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress;
 
       try {
-        const position = execSync(pollcommand).toString();
+        const output = execSync(pollcommand)
+
+        this.platform.log.debug("Polling output: ",output);
+
+        const position = output.toString();
 
         if (position === null || position === '') {
           return;
