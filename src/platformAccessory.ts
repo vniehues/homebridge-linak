@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { Service, PlatformAccessory } from 'homebridge';
 import { LinakDeskPlatform } from './platform';
-import { exec, execSync, spawn } from 'child_process';
+import { exec } from 'child_process';
 
 // const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
 // const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
@@ -14,10 +14,6 @@ import { exec, execSync, spawn } from 'child_process';
 // const COMMAND_REFERENCE_INPUT_STOP = bytearray(struct.pack("<H", 32769))
 // const COMMAND_REFERENCE_INPUT_UP = bytearray(struct.pack("<H", 32768))
 // const COMMAND_REFERENCE_INPUT_DOWN = bytearray(struct.pack("<H", 32767))
-
-function waitFor(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 /**
  * Platform Accessory
@@ -86,7 +82,7 @@ export class DeskAccessory {
      * can use the same sub type id.)
      */
 
-    let pollinginterval = this.platform.config.pollingRate > 10 ? this.platform.config.pollingRate : 10;
+    const pollinginterval = this.platform.config.pollingRate > 10 ? this.platform.config.pollingRate : 10;
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const interval = setInterval(() => {
@@ -109,10 +105,9 @@ export class DeskAccessory {
           this.platform.log.debug('polling std error:', stderr.toString());
         }
         if (error) {
-          if (error.signal != 'SIGINT') {
+          if (error.signal !== 'SIGINT') {
             this.platform.log.debug('polling error:', error);
-          }
-          else {
+          } else {
             // We killed it, lets return.
             return;
           }
@@ -180,10 +175,9 @@ export class DeskAccessory {
         this.platform.log.debug('moving std error:', stderr.toString());
       }
       if (error) {
-        if (error.signal != 'SIGINT') {
+        if (error.signal !== 'SIGINT') {
           this.platform.log.debug('moving error:', error);
-        }
-        else {
+        } else {
           // We killed it, lets return.
           return;
         }
@@ -225,8 +219,7 @@ export class DeskAccessory {
             .updateValue(this.platform.Characteristic.PositionState.STOPPED);
         }
       }
-    })
-
+    });
   }
 
 
@@ -244,7 +237,7 @@ export class DeskAccessory {
     // We don't want any status refreshes until we complete the move.
     this.currentlyRequestingMove = true;
 
-    /////// NOPE! BAD IDEA! 
+    /////// NOPE! BAD IDEA!
     /////// This would make the desk run infinitely (to it's end-stops.)
     /////// because the script is needed to stop movement.
     // Kill current move. safety & responsiveness.
@@ -255,7 +248,7 @@ export class DeskAccessory {
     // }
 
     clearTimeout(this.requestedPosTimer);
-      this.requestedPosTimer = setTimeout(() => {
+    this.requestedPosTimer = setTimeout(() => {
 
       this.platform.log.debug('executing move to: ', value);
 
@@ -268,7 +261,7 @@ export class DeskAccessory {
       this.service.getCharacteristic(this.platform.Characteristic.PositionState).updateValue(positionState);
 
       setTimeout(() => this.moveToPercent(value), 100);
-      
+
       this.currentlyRequestingMove = false;
     }, 1500);
   }
