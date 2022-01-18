@@ -60,17 +60,20 @@ homebridge plugin to control any linak bluetooth desk
 ```
 
 ## Features
-Ads the standing desk as a controllable blind to the home app. You can then move that blind up and down and and so the desk will do.
-Unfortinatly there is nothing like a desk or similar in homekit, so this might be the best solution to freely adjust the height.
+Ads the standing desk as a controllable blind to the home app. 
+You can then adjust the desk height by setting that blind.
+Unfortinatly there is nothing like a desk or similar in homekit, so this is currently the best solution to freely adjust the height.
 
 I would recomment to set some home scenes for your standing and sitting height, with your prefered value, e.g.:
-Standing: blind 90% open
-Sitting: blind 15% open
-With that you can even say something like "Move desk to sitting height." to Siri.
+Standing: blind 65% open
+Sitting: blind 25% open
+Using scenes you can adjust your desk using scenes like "Hey Siri, activate sitting".
 
 ## How it works
 The plugin calculates the height in mm from the value set by homekit and calls the [idasen-controller](https://github.com/rhyst/idasen-controller) implementation with the height in mm.
 The calculation is taken from [homebridge_idasen](https://github.com/Pob4acke/homebridge_idasen).
+It can also get the actual desk height from the controller. 
+The actual height will be calculated using the calculations mentioned before and will be returned to homekit as a percentage.
 
 ## References
 Special thanks to [idasen-controller](https://github.com/rhyst/idasen-controller) for his hard work! This made my plugin possible in the first place.
