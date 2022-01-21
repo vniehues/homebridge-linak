@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import {PlatformAccessory, Service} from 'homebridge';
 import {LinakDeskPlatform} from './platform';
-import {exec} from 'child_process';
+import {exec, spawn} from 'child_process';
 
 // const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
 // const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
@@ -107,13 +107,30 @@ export class DeskAccessory {
 
     //  clearInterval(interval);
 
-    exec(this.serverCommand, (error, stdout, stderr) => {
-      if (stderr) {
-        this.platform.log.debug('server std error:', stderr.toString());
-      }
-      if (error) {
-        this.platform.log.debug('server error:', error);
-      }
+    // exec(this.serverCommand, (error, stdout, stderr) => {
+    //   if (stderr) {
+    //     this.platform.log.debug('server std error:', stderr.toString());
+    //   }
+    //   if (error) {
+    //     this.platform.log.debug('server error:', error);
+    //   }
+    //   if (stdout) {
+    //     this.platform.log.debug('server std out:', error);
+    //   }
+    // });
+
+    const ls = spawn(this.serverCommand);
+
+    ls.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+
+    ls.stderr.on('data', (data) => {
+      console.error(`stderr: ${data}`);
+    });
+
+    ls.on('close', (code) => {
+      console.log(`child process exited with code ${code}`);
     });
   }
 
