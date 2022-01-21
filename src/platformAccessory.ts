@@ -80,8 +80,8 @@ export class DeskAccessory {
 
 
     this.baseCommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress
-        + ' --base-height ' + accessory.context.device.baseHeight
-        + ' --movement-range ' + accessory.context.device.movementRange;
+        + ' --base-height ' + this.accessory.context.device.baseHeight
+        + ' --movement-range ' + this.accessory.context.device.movementRange;
 
     /**
      * Creating multiple services of the same type.
