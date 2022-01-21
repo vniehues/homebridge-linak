@@ -85,7 +85,7 @@ export class DeskAccessory {
         + ' --base-height ' + this.accessory.context.device.baseHeight
         + ' --movement-range ' + this.accessory.context.device.movementRange;
 
-    this.serverCommand = this.platform.config.idasenControllerPath + ' --server ';
+    this.serverCommand = this.platform.config.idasenControllerPath;
 
     /**
      * Creating multiple services of the same type.
@@ -119,7 +119,7 @@ export class DeskAccessory {
     //   }
     // });
 
-    const ls = spawn(this.serverCommand);
+    const ls = spawn(this.serverCommand, ['--server']);
 
     ls.stdout.on('data', (data) => {
       console.log(`stdout: ${data}`);
