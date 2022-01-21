@@ -125,12 +125,20 @@ export class DeskAccessory {
   startServer() {
     const ls = spawn(this.serverCommand, ['--server']);
 
+    ls.on('message', (message) => {
+      this.platform.log.debug('server message: ', message);
+    });
+
     ls.stdout.on('data', (data) => {
       this.platform.log.debug('server data: ', data);
     });
 
     ls.stderr.on('data', (data) => {
       this.platform.log.debug('server error: ', data);
+    });
+
+    ls.on('error', (err) => {
+      this.platform.log.debug('Failed to start server: ', err);
     });
 
     ls.on('close', (code) => {
