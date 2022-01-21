@@ -70,13 +70,16 @@ export class LinakDeskPlatform implements DynamicPlatformPlugin {
    * must not be registered again to prevent "duplicate UUID" errors.
    */
   discoverDevices() {
-
-    // EXAMPLE ONLY
-    // A real plugin you would discover accessories from the local network, cloud services
-    // or a user-defined array in the platform config.
-
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of this.config.desks) {
+
+      if (!device.macAddress) {
+        return;
+      }
+
+      if (!device.name) {
+        return;
+      }
 
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
