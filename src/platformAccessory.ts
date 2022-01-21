@@ -224,9 +224,9 @@ export class DeskAccessory {
 
           const heightStr = splitFirst.split('mm')[0];
 
-          const height_rel: number = this.PercentageToHeight(+heightStr);
+          const height_rel: number = this.HeightToPercentage(+heightStr);
 
-          const currentValue = Math.round(height_rel);
+          const currentValue = height_rel;
 
           this.platform.log.debug('new height%: ', currentValue);
 
