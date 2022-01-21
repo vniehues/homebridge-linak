@@ -107,7 +107,14 @@ export class DeskAccessory {
 
     //  clearInterval(interval);
 
-    exec(this.serverCommand);
+    exec(this.serverCommand, (error, stdout, stderr) => {
+      if (stderr) {
+        this.platform.log.debug('server std error:', stderr.toString());
+      }
+      if (error) {
+        this.platform.log.debug('server error:', error);
+      }
+    });
   }
 
 
