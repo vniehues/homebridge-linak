@@ -33,7 +33,7 @@ export class DeskAccessory {
   private requestedPosTimer;
 
   private baseCommand;
-
+  private serverCommand;
 
 
   private maxRetries = 3;
@@ -80,9 +80,12 @@ export class DeskAccessory {
 
 
     this.platform.log.debug('configuring desk: ', this.accessory.context.device);
-    this.baseCommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress
+    this.baseCommand = this.platform.config.idasenControllerPath + '--forward'
+        + ' --mac-address ' + this.accessory.context.device.macAddress
         + ' --base-height ' + this.accessory.context.device.baseHeight
         + ' --movement-range ' + this.accessory.context.device.movementRange;
+
+    this.serverCommand = this.platform.config.idasenControllerPath + '--server';
 
     /**
      * Creating multiple services of the same type.
@@ -103,6 +106,8 @@ export class DeskAccessory {
     }, pollinginterval * 1000);
 
     //  clearInterval(interval);
+
+    exec(this.serverCommand);
   }
 
 
