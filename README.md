@@ -1,10 +1,16 @@
-
-<p align="center">
-
-<img src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png" width="150">
-
-</p>
-
+<span align="center">
+    
+![logo](Images/homebridge-linak-small.png?raw=true)
+    
+</span>
+<span align="center">
+    
+  [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+  [![Downloads](https://img.shields.io/npm/dt/homebridge-linak)](https://www.npmjs.com/package/homebridge-linak)
+  [![Version](https://img.shields.io/npm/v/homebridge-linak)](https://www.npmjs.com/package/homebridge-linak)
+  [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/vniehues/EUR)
+    
+</span>
 
 # linak-homebridge
 homebridge plugin to control any linak bluetooth desk
@@ -44,8 +50,6 @@ homebridge plugin to control any linak bluetooth desk
 | Range of movement | movementRange | How far above base-height the desk can extend (mm). Default 650.             | 650           |
 
 #### sample config
-![sample configuration](Images/configuration.png?raw=true)
-
 ``` 
 {
     "name": "Linak Platform",
@@ -60,6 +64,8 @@ homebridge plugin to control any linak bluetooth desk
     "platform": "LinakController"
 }
 ```
+![sample configuration](Images/configuration.png?raw=true)
+
 
 ## Features
 Ads the standing desk as a controllable blind to the home app. 
