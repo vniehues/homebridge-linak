@@ -119,18 +119,23 @@ export class DeskAccessory {
     //   }
     // });
 
+    this.startServer();
+  }
+
+  startServer() {
     const ls = spawn(this.serverCommand, ['--server']);
 
     ls.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
+      this.platform.log.debug('server data: ', data);
     });
 
     ls.stderr.on('data', (data) => {
-      console.error(`stderr: ${data}`);
+      this.platform.log.debug('server error: ', data);
     });
 
     ls.on('close', (code) => {
-      console.log(`child process exited with code ${code}`);
+      this.platform.log.debug('server close: ', code);
+      this.startServer();
     });
   }
 
