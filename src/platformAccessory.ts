@@ -79,6 +79,7 @@ export class DeskAccessory {
       .onSet(this.handleTargetPositionSet.bind(this));
 
 
+    this.platform.log.debug('configuring desk: ', this.accessory.context.device);
     this.baseCommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress
         + ' --base-height ' + this.accessory.context.device.baseHeight
         + ' --movement-range ' + this.accessory.context.device.movementRange;
@@ -112,12 +113,12 @@ export class DeskAccessory {
   // Percentage = (100 * "height") / ("max" - "min") - (100 * "min") / ("max" - "min")
 
   PercentageToHeight(percentage: number) {
-    return this.accessory.context.device.baseHeight + (percentage / 100) * (this.accessory.context.device.movementRange);
+    return Math.round(this.accessory.context.device.baseHeight + (percentage / 100) * (this.accessory.context.device.movementRange));
   }
 
   HeightToPercentage(height: number) {
-    return (100 * height) / (this.accessory.context.device.movementRange)
-        - (100 * this.accessory.context.device.baseHeight) / this.accessory.context.device.movementRange;
+    return Math.round( (100 * height) / (this.accessory.context.device.movementRange)
+        - (100 * this.accessory.context.device.baseHeight) / this.accessory.context.device.movementRange);
   }
 
   poll() {
