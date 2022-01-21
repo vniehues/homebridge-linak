@@ -41,6 +41,18 @@
               "type": "string",
               "required": true,
               "default": ""
+            },
+            "baseHeight": {
+              "title": "Base height",
+              "type": "number",
+              "required": true,
+              "default": "620"
+            },
+            "movementRange": {
+              "title": "Range of movement",
+              "type": "number",
+              "required": true,
+              "default": "650"
             }
           }
         }

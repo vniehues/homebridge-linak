@@ -18,7 +18,7 @@ homebridge plugin to control any linak bluetooth desk
 
 #### Install
 
-1. Install [idasen-controller](https://github.com/rhyst/idasen-controller) first
+1. Install the latest version of [idasen-controller](https://github.com/rhyst/idasen-controller) first
 2. Make sure the homebridge device is paired to the desk over bluetooth
 3. Install this plugin
 4. Configure this plugin (see below)
@@ -36,10 +36,12 @@ homebridge plugin to control any linak bluetooth desk
 | Desks                     | desks                | array of desks                                                                                    | -                                     |
 
 #### desk config
-| field name                | parameter            | description                                                                                       | default value                         | 
-|---------------------------|----------------------|---------------------------------------------------------------------------------------------------|---------------------------------------|
-| Name                      | name                 | name of the desk                                                                                  | Linak Desk                            |
-| Desk MAC Address          | macAddress           | the MAC Address of your desk                                                                      | -                                     |
+| field name        | parameter     | description                                                                  | default value | 
+|-------------------|---------------|------------------------------------------------------------------------------|---------------|
+| Name              | name          | name of the desk                                                             | Linak Desk    |
+| MAC Address       | macAddress    | the MAC Address of your desk                                                 | -             |
+| Base height       | baseHeight    | The lowest possible height (mm) of the desk top from the floor. Default 620. | 620           |
+| Range of movement | movementRange | How far above base-height the desk can extend (mm). Default 650.             | 650           |
 
 #### sample config
 ![sample configuration](Images/configuration.png?raw=true)

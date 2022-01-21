@@ -81,6 +81,14 @@ export class LinakDeskPlatform implements DynamicPlatformPlugin {
         return;
       }
 
+      if (!device.baseHeight) {
+        device.baseHeight = 620;
+      }
+
+      if (!device.movementRange) {
+        device.movementRange = 650;
+      }
+
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
       // number or MAC address

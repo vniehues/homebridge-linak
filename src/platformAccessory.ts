@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
-import { Service, PlatformAccessory } from 'homebridge';
-import { LinakDeskPlatform } from './platform';
-import { exec } from 'child_process';
+import {PlatformAccessory, Service} from 'homebridge';
+import {LinakDeskPlatform} from './platform';
+import {exec} from 'child_process';
 
 // const UUID_HEIGHT = '99fa0021-338a-1024-8a49-009c0215f78a';
 // const UUID_COMMAND = '99fa0002-338a-1024-8a49-009c0215f78a';
@@ -31,6 +31,8 @@ export class DeskAccessory {
   private currentMoveProcess;
 
   private requestedPosTimer;
+
+  private baseCommand;
 
 
 
@@ -76,6 +78,11 @@ export class DeskAccessory {
       .onGet(this.handleTargetPositionGet.bind(this))
       .onSet(this.handleTargetPositionSet.bind(this));
 
+
+    this.baseCommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress
+        + ' --base-height ' + accessory.context.device.baseHeight
+        + ' --movement-range ' + accessory.context.device.movementRange;
+
     /**
      * Creating multiple services of the same type.
      *
@@ -97,12 +104,28 @@ export class DeskAccessory {
     //  clearInterval(interval);
   }
 
+
+
+  // Percentage to height (easy!)
+  // Height = "min" + ("percentage" / 100) * ("max" - "min")
+  // height to percentage (a bit more tricky, but solvable)
+  // Percentage = (100 * "height") / ("max" - "min") - (100 * "min") / ("max" - "min")
+
+  PercentageToHeight(percentage: number) {
+    return this.accessory.context.device.baseHeight + (percentage / 100) * (this.accessory.context.device.movementRange);
+  }
+
+  HeightToPercentage(height: number) {
+    return (100 * height) / (this.accessory.context.device.movementRange)
+        - (100 * this.accessory.context.device.baseHeight) / this.accessory.context.device.movementRange;
+  }
+
   poll() {
     if (!this.isMoving && !this.isPolling && !this.currentlyRequestingMove) {
 
       this.isPolling = true;
 
-      const pollcommand = this.platform.config.idasenControllerPath + ' --mac-address ' + this.accessory.context.device.macAddress;
+      const pollcommand = this.baseCommand;
 
       this.currentPollProcess = exec(pollcommand, (error, stdout, stderr) => {
         if (stderr) {
@@ -127,11 +150,9 @@ export class DeskAccessory {
 
             const splitFirst = outputString.split('Height:')[1];
 
-            const splitSecond = splitFirst.split('mm')[0];
+            const heightStr = splitFirst.split('mm')[0];
 
-            const heightStr = splitSecond;
-
-            const height_rel: number = +heightStr / 6.5 - 95;
+            const height_rel: number = this.HeightToPercentage(+heightStr);
 
             const currentValue = Math.round(height_rel);
 
@@ -166,14 +187,9 @@ export class DeskAccessory {
       return;
     }
 
-    let newheight = 620 + percentage / 100 * 650;
-    newheight = Math.round(newheight);
-    if (newheight === 620) {
-      newheight = 621;
-    }
+    const newheight = this.PercentageToHeight(percentage);
 
-    const moveCommand = this.platform.config.idasenControllerPath + ' --mac-address '
-      + this.accessory.context.device.macAddress + ' --move-to ' + newheight;
+    const moveCommand = this.baseCommand + ' --move-to ' + newheight;
 
     this.isMoving = true;
 
@@ -205,11 +221,9 @@ export class DeskAccessory {
 
           const splitFirst = outputString.split('Final height:')[1];
 
-          const splitSecond = splitFirst.split('mm')[0];
+          const heightStr = splitFirst.split('mm')[0];
 
-          const heightStr = splitSecond;
-
-          const height_rel: number = +heightStr / 6.5 - 95;
+          const height_rel: number = this.PercentageToHeight(+heightStr);
 
           const currentValue = Math.round(height_rel);
 
@@ -250,16 +264,6 @@ export class DeskAccessory {
     // We don't want any status refreshes until we complete the move.
     this.currentlyRequestingMove = true;
 
-    /////// NOPE! BAD IDEA!
-    /////// This would make the desk run infinitely (to it's end-stops.)
-    /////// because the script is needed to stop movement.
-    // Kill current move. safety & responsiveness.
-    // if (this.isMoving) {
-    //   this.currentMoveProcess?.kill('SIGINT');
-    //   this.currentMoveProcess?.kill();
-    //   this.currentMoveProcess = null;
-    // }
-
     clearTimeout(this.requestedPosTimer);
     this.requestedPosTimer = setTimeout(() => {
 
@@ -294,9 +298,7 @@ export class DeskAccessory {
     this.platform.log.debug('Triggered GET PositionState');
 
     // set this to a valid value for PositionState
-    const currentValue = this.platform.Characteristic.PositionState.STOPPED;
-
-    return currentValue;
+    return this.platform.Characteristic.PositionState.STOPPED;
   }
 
   /**
