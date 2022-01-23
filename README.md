@@ -5,10 +5,10 @@
 </span>
 <span align="center">
     
-  [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
-  [![Downloads](https://img.shields.io/npm/dt/homebridge-linak)](https://www.npmjs.com/package/homebridge-linak)
-  [![Version](https://img.shields.io/npm/v/homebridge-linak)](https://www.npmjs.com/package/homebridge-linak)
-  [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/vniehues/EUR)
+  [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple?style=for-the-badge&scale=1.38)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+  [![Downloads](https://img.shields.io/npm/dt/homebridge-linak?style=for-the-badge)](https://www.npmjs.com/package/homebridge-linak)
+  [![Version](https://img.shields.io/npm/v/homebridge-linak?style=for-the-badge)](https://www.npmjs.com/package/homebridge-linak)
+  [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg?style=for-the-badge)](https://paypal.me/vniehues/EUR)
     
 </span>
 
