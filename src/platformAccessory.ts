@@ -130,9 +130,11 @@ export class DeskAccessory {
 
       this.currentPollProcess = exec(pollcommand, (error, stdout, stderr) => {
         if (stderr) {
+          this.isPolling = false;
           this.platform.log.debug('polling std error:', stderr.toString());
         }
         if (error) {
+          this.isPolling = false;
           if (error.signal !== 'SIGINT') {
             this.platform.log.debug('polling error:', error);
           } else {
